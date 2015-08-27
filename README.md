@@ -48,11 +48,14 @@ public class Demo {
 		Queue queue = new CircularDiskQueueAndStack(diskSpaceByte, dataFileName);
 		Stack stack = new CircularDiskQueueAndStack(diskSpaceByte, dataFileName);
 
-		// unfixed length, can read/write on both first/last. needs additional duplicated header compared to stack/queue.
+		// unfixed length, can read/write on both first/last. 
+		// needs additional duplicated header compared to stack/queue.
 		Deque deque = new CircularDiskDeque(diskSpaceByte, dataFileName);
 
-		// efficient when the length of the input data is fixed because no need to keep size header
-		Deque fixedDeque = new CircularDiskDequeFixed(diskSpaceByte, dataFileName, 500); // bytes
+		// efficient when the length of the input data is fixed because 
+		// no need to keep size header
+		long fixedSizeByte = 500;
+		Deque fixedDeque = new CircularDiskDequeFixed(diskSpaceByte, dataFileName, fixedSizeByte);
 
 		// needs to close above
 	}
