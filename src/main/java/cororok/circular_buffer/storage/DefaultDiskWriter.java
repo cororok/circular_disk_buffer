@@ -5,7 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-public class DefaultDiskWriter implements DiskWriter {
+public class DefaultDiskWriter extends DiskWriter {
 
 	RandomAccessFile file;
 

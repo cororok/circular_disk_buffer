@@ -10,8 +10,6 @@ import static org.junit.Assert.assertArrayEquals;
 
 import org.junit.Test;
 
-import cororok.circular_buffer.CircularBufferInfo;
-
 public class CircularBufferInfoAddFirstTest {
 
 	@Test

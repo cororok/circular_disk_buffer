@@ -10,8 +10,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import cororok.circular_buffer.CircularDiskQueueAndStack;
-
 public class CircularDiskQueueAndStackTest {
 	final String fileName = "dqtest.txt";
 	final long headerSize = CircularDiskQueueAndStack.HEADER_SIZE;
@@ -58,17 +56,6 @@ public class CircularDiskQueueAndStackTest {
 	}
 
 	@Test
-	public void testNumAndByte() {
-		for (int i = 0; i < 1000_000; i++) {
-			byte[] bytes = CircularDiskQueueAndStack.numToByte(i);
-			assertEquals(4, bytes.length);
-
-			int result = CircularDiskQueueAndStack.byteToNum(bytes);
-			assertEquals(i, result);
-		}
-	}
-
-	@Test
 	public void testReadWriteHeader() throws Exception {
 		testReadWriteHeader(new long[] { 0, 4 });
 		testReadWriteHeader(new long[] { 6, 10 });
@@ -82,18 +69,18 @@ public class CircularDiskQueueAndStackTest {
 		int input = 0;
 		int result = 0;
 		try (CircularDiskQueueAndStack test = openCircularDiskQueueAndStack()) {
-			test.writeLengthToHeader(range, input);
-			result = test.readLengthFromHeader(range);
+			test.writeHeader(range, input);
+			result = test.readHeader(range);
 			assertEquals(input, result);
 
 			input = 1;
-			test.writeLengthToHeader(range, input);
-			result = test.readLengthFromHeader(range);
+			test.writeHeader(range, input);
+			result = test.readHeader(range);
 			assertEquals(input, result);
 
 			input = Integer.MAX_VALUE;
-			test.writeLengthToHeader(range, input);
-			result = test.readLengthFromHeader(range);
+			test.writeHeader(range, input);
+			result = test.readHeader(range);
 			assertEquals(input, result);
 		} catch (Exception e) {
 			throw e;
@@ -128,6 +115,56 @@ public class CircularDiskQueueAndStackTest {
 		}
 	}
 
+	@Test
+	public void testPeekWrite() throws Exception {
+		final byte[] input0 = "12345".getBytes();
+		final byte[] input1 = "abc".getBytes();
+
+		final long length0 = input0.length;
+		final long length1 = input1.length;
+		final long lengthBoth = length0 + length1;
+
+		try (CircularDiskQueueAndStack test = openCircularDiskQueueAndStack()) {
+			final long space0 = length0 + test.getHeaderSize();
+			final long space1 = length1 + test.getHeaderSize();
+			final long spaceBoth = space0 + space1;
+			assertSizeLengthEquals(0, 0, 0, test);
+
+			// stack
+			test.addFirst(input0);
+			assertSizeLengthEquals(1, length0, space0, test);
+
+			byte[] result0 = test.peekFirst();
+			assertSizeLengthEquals(1, length0, space0, test);
+			assertArrayEquals(input0, result0);
+
+			// one more
+			result0 = test.peekFirst();
+			assertSizeLengthEquals(1, length0, space0, test);
+			assertArrayEquals(input0, result0);
+
+			// add another
+			test.addFirst(input1);
+			assertSizeLengthEquals(2, lengthBoth, spaceBoth, test);
+
+			byte[] result1 = test.peekFirst();
+			assertSizeLengthEquals(2, lengthBoth, spaceBoth, test);
+			assertArrayEquals(input1, result1);
+
+			// one more
+			result1 = test.peekFirst();
+			assertSizeLengthEquals(2, lengthBoth, spaceBoth, test);
+			assertArrayEquals(input1, result1);
+
+			// remove
+			result1 = test.removeFirst();
+			assertSizeLengthEquals(1, length0, space0, test);
+			assertArrayEquals(input1, result1);
+		} catch (Exception e) {
+			throw e;
+		}
+	}
+
 	@Before
 	@After
 	public void clean() throws Exception {
@@ -136,8 +173,8 @@ public class CircularDiskQueueAndStackTest {
 
 	public static void deleteFile(String file) {
 		deleteFile(new File(file));
-		deleteFile(new File(file+ ".index"));
-		deleteFile(new File(file+ ".lock"));
+		deleteFile(new File(file + ".index"));
+		deleteFile(new File(file + ".lock"));
 	}
 
 	public static void deleteFile(File file) {

@@ -9,8 +9,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import cororok.circular_buffer.CircularDiskQueueAndStackTest;
-import cororok.circular_buffer.storage.DefaultDiskWriter;
-import cororok.circular_buffer.storage.IndexWriter;
 
 public class IndexWriterTest {
 

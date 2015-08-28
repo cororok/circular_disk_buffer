@@ -11,8 +11,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import cororok.circular_buffer.CircularDiskQueueAndStack;
-
 public class CircularDiskQueueAndStackLoopTest {
 
 	final String fileName = "dqtest.txt";
@@ -38,8 +36,7 @@ public class CircularDiskQueueAndStackLoopTest {
 		}
 		totalLengthOfStorage = totalLength + inputs.length * headerSize;
 		final long more = 99; // to be circled.
-		try (CircularDiskQueueAndStack test = new CircularDiskQueueAndStack(totalLengthOfStorage + more,
-				fileName)) {
+		try (CircularDiskQueueAndStack test = new CircularDiskQueueAndStack(totalLengthOfStorage + more, fileName)) {
 			LinkedList<byte[]> dq = new LinkedList<>();
 			for (int cnt = 0; cnt < 1000; cnt++) {
 				assertSizeLengthEquals(0, 0, 0, test);

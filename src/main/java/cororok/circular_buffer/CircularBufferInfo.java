@@ -82,9 +82,9 @@ public class CircularBufferInfo {
 	 * It adds given space at the right side of end point and move the end point to the right side. Basically there are
 	 * three cases. 1st not enough space to put new space then it will return null without a change. 2nd there is enough
 	 * space between end point to the end (of the storage) or end point to the start point then it will move end point
-	 * to the right side and return an array[2]. 3rd there is not enough space between end point to the end but
-	 * it has additional space for the rest between zero to the start point then it will move end point to the left side
-	 * of start point and returns an array[4].
+	 * to the right side and return an array[2]. 3rd there is not enough space between end point to the end but it has
+	 * additional space for the rest between zero to the start point then it will move end point to the left side of
+	 * start point and returns an array[4].
 	 * 
 	 * @param space
 	 *            the amount which needs to allocate the data inside.
@@ -94,10 +94,10 @@ public class CircularBufferInfo {
 	 *         For example capacity is 5 then it will have 5 cells(space) inside like [0][1][2][3][4](Note: it is a
 	 *         single dimension, no is index of array) and start point/end point both are (at) 0. If parameter space is
 	 *         3 it will return a 2 size of array [0][3] which tells it needs space from 0 to (before)3 to allocate the
-	 *         given 3 space. And start point is still at 0 but end point was moved to 3. Let's say later it removes this
-	 *         3 space from first then the start point and end point will be 3. And now add another 3 space then it will
-	 *         return 4 size of array [3][5][0][1] because it has to split 3 into to two space from 3 to (before)5 and
-	 *         the rest 1 space from 0 to (before)1
+	 *         given 3 space. And start point is still at 0 but end point was moved to 3. Let's say later it removes
+	 *         this 3 space from first then the start point and end point will be 3. And now add another 3 space then it
+	 *         will return 4 size of array [3][5][0][1] because it has to split 3 into to two space from 3 to (before)5
+	 *         and the rest 1 space from 0 to (before)1
 	 */
 	public long[] addLast(final long space) {
 		long[] range;

@@ -20,55 +20,65 @@ public class CircularDiskDeque extends CircularDiskQueueAndStack implements Dequ
 	}
 
 	@Override
-	void writeStorage(byte[] bs, boolean isFirst) throws IOException {
-		if (isFirst) {
-			writeLengthToHeader(info.addFirst(HEADER_SIZE), bs.length);
-			writeToStorage(info.addFirst(bs.length), bs);
-			writeLengthToHeader(info.addFirst(HEADER_SIZE), bs.length); // one more
-			index.writeStartAndSize(info.getStart(), info.size());
-		} else {
-			writeLengthToHeader(info.addLast(HEADER_SIZE), bs.length);
-			writeToStorage(info.addLast(bs.length), bs);
-			writeLengthToHeader(info.addLast(HEADER_SIZE), bs.length); // one more
-			index.writeEndAndSize(info.getEnd(), info.size());
-		}
+	protected void writeFirst(final byte[] bs) throws IOException { // header, data, header
+		writeHeader(info.addFirst(HEADER_SIZE), bs.length); // one more header
+		super.writeFirst(bs); // to left, header+data
 	}
 
 	@Override
-	byte[] readStorage(boolean isFirst, boolean readOnly) throws IOException {
-		byte[] result;
-		if (isFirst) {
-			long length = readLengthFromHeader(info.removeFirst(HEADER_SIZE));
-			long[] range = info.removeFirst(length);
-			result = readBytesFromStorage(range);
-			if (readOnly == false) {
-				info.removeFirst(HEADER_SIZE); // one more header
-				index.writeStartAndSize(info.getStart(), info.size());
-			}
-		} else {
-			long length = readLengthFromHeader(info.removeLast(HEADER_SIZE));
-			long[] range = info.removeLast(length);
-			result = readBytesFromStorage(range);
-			if (readOnly == false) {
-				info.removeLast(HEADER_SIZE); // one more header
-				index.writeEndAndSize(info.getEnd(), info.size());
-			}
-		}
+	protected void writeLast(final byte[] bs) throws IOException { // header, data, header
+		super.writeLast(bs); // header+data
+		writeHeader(info.addLast(HEADER_SIZE), bs.length); // one more header
+	}
+
+	byte[] readFirstToRemove() throws IOException {
+		byte[] result = super.readFirst();
+		info.removeFirst(HEADER_SIZE); // rid one more header
+		return result;
+	}
+
+	byte[] readLast() throws IOException {
+		long length = readHeader(info.removeLast(HEADER_SIZE));
+		long[] range = info.removeLast(length);
+		return writer.readStorage(range);
+	}
+
+	byte[] readLastToRemove() throws IOException {
+		byte[] result = readLast();
+		info.removeLast(HEADER_SIZE); // rid one more header
 		return result;
 	}
 
 	@Override
 	public byte[] peekLast() throws IOException {
-		return read(false, true);
+		if (info.size() == 0)
+			return null;
+
+		info.backupStatus();
+		try {
+			return readLast();
+		} catch (Throwable e) {
+			throw e;
+		} finally {
+			info.rollback(); // because read only
+		}
 	}
 
 	@Override
 	public byte[] removeLast() throws IOException {
-		byte[] result = read(false, false);
-		if (result == null)
+		if (info.size() == 0)
 			throw new NoSuchElementException();
 
-		return result;
+		info.backupStatus();
+		try {
+			byte[] result = readLastToRemove();
+			writeIndexEnd();
+			decreaseLengthSize(result.length);
+			return result;
+		} catch (Throwable e) {
+			info.rollback();
+			throw e;
+		}
 	}
 
 	@Override

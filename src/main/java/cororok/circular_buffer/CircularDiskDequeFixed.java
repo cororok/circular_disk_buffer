@@ -17,42 +17,49 @@ public class CircularDiskDequeFixed extends CircularDiskDeque {
 		this.fixedSize = fixedSize;
 	}
 
+	@Override
 	void initSizeAndLength() {
-		this.size = this.info.size(); // cs counts data only
+		this.size = this.info.size(); // info counts data only
 		this.length = this.info.length(); // the same
 	}
 
 	@Override
-	void writeStorage(final byte[] bs, boolean isFirst) throws IOException {
-		if (bs.length != fixedSize)
-			throw new IOException("wrong input size " + bs.length + ", expected " + fixedSize);
-
-		if (isFirst) {
-			writeToStorage(info.addFirst(bs.length), bs);
-			index.writeStartAndSize(info.getStart(), info.size());
-		} else {
-			writeToStorage(info.addLast(bs.length), bs);
-			index.writeEndAndSize(info.getEnd(), info.size());
-		}
+	protected void writeFirst(final byte[] bs) throws IOException {
+		write(info.addFirst(bs.length), bs);
 	}
 
 	@Override
-	byte[] readStorage(boolean isFirst, boolean readOnly) throws IOException {
-		byte[] result;
-		if (isFirst) {
-			long[] range = info.removeFirst(fixedSize);
-			result = readBytesFromStorage(range);
-			if (readOnly == false) {
-				index.writeStartAndSize(info.getStart(), info.size());
-			}
-		} else {
-			long[] range = info.removeLast(fixedSize);
-			result = readBytesFromStorage(range);
-			if (readOnly == false) {
-				index.writeEndAndSize(info.getEnd(), info.size());
-			}
-		}
-		return result;
+	protected void writeLast(final byte[] bs) throws IOException {
+		write(info.addLast(bs.length), bs);
+	}
+
+	private void write(final long[] range, final byte[] bs) throws IOException {
+		if (bs.length != fixedSize)
+			throw new IOException("wrong input size " + bs.length + ", expected " + fixedSize);
+
+		writer.writeStorage(range, bs);
+	}
+
+	@Override
+	byte[] readFirst() throws IOException {
+		long[] range = info.removeFirst(fixedSize);
+		return writer.readStorage(range);
+	}
+
+	@Override
+	byte[] readFirstToRemove() throws IOException {
+		return readFirst();
+	}
+
+	@Override
+	byte[] readLast() throws IOException {
+		long[] range = info.removeLast(fixedSize);
+		return writer.readStorage(range);
+	}
+
+	@Override
+	byte[] readLastToRemove() throws IOException {
+		return readLast();
 	}
 
 	@Override

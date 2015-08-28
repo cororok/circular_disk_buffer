@@ -7,8 +7,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import cororok.circular_buffer.CircularDiskDeque;
-
 public class CircularDiskDequeTest {
 
 	final String fileName = "dqtest.txt";
@@ -18,10 +16,15 @@ public class CircularDiskDequeTest {
 		final byte[] input0 = "12345".getBytes();
 		final byte[] input1 = "abc".getBytes();
 
+		testReadWriteOnce(new CircularDiskDeque(100, fileName), input0, input1);
+	}
+
+	public static void testReadWriteOnce(CircularDiskDeque test, final byte[] input0, final byte[] input1)
+			throws Exception {
 		final long length0 = input0.length;
 		final long length1 = input1.length;
 		final long lengthBoth = length0 + length1;
-		try (CircularDiskDeque test = new CircularDiskDeque(100, fileName)) {
+		try {
 			assertSizeLengthEquals(0, 0, 0, test);
 
 			final long space0 = length0 + test.getHeaderSize();
@@ -50,6 +53,80 @@ public class CircularDiskDequeTest {
 			assertArrayEquals(input0, result2);
 		} catch (Exception e) {
 			throw e;
+		} finally {
+			test.close();
+		}
+	}
+
+	@Test
+	public void testPeekWrite() throws Exception {
+		final byte[] input0 = "12345".getBytes();
+		final byte[] input1 = "abc".getBytes();
+		testPeekWrite(new CircularDiskDeque(100, fileName), input0, input1);
+	}
+
+	public static void testPeekWrite(CircularDiskDeque test, final byte[] input0, final byte[] input1)
+			throws Exception {
+		final long length0 = input0.length;
+		final long length1 = input1.length;
+		final long lengthBoth = length0 + length1;
+
+		try {
+			final long space0 = length0 + test.getHeaderSize();
+			final long space1 = length1 + test.getHeaderSize();
+			final long spaceBoth = space0 + space1;
+			assertSizeLengthEquals(0, 0, 0, test);
+
+			// stack
+			test.addFirst(input0);
+			assertSizeLengthEquals(1, length0, space0, test);
+
+			byte[] result0 = test.peekFirst();
+			assertSizeLengthEquals(1, length0, space0, test);
+			assertArrayEquals(input0, result0);
+
+			result0 = test.peekLast();
+			assertSizeLengthEquals(1, length0, space0, test);
+			assertArrayEquals(input0, result0);
+
+			// one more
+			result0 = test.peekFirst();
+			assertSizeLengthEquals(1, length0, space0, test);
+			assertArrayEquals(input0, result0);
+
+			result0 = test.peekLast();
+			assertSizeLengthEquals(1, length0, space0, test);
+			assertArrayEquals(input0, result0);
+
+			// add another
+			test.addFirst(input1);
+			assertSizeLengthEquals(2, lengthBoth, spaceBoth, test);
+
+			byte[] result1 = test.peekFirst();
+			assertSizeLengthEquals(2, lengthBoth, spaceBoth, test);
+			assertArrayEquals(input1, result1);
+
+			result0 = test.peekLast();
+			assertSizeLengthEquals(2, lengthBoth, spaceBoth, test);
+			assertArrayEquals(input0, result0);
+
+			// one more
+			result1 = test.peekFirst();
+			assertSizeLengthEquals(2, lengthBoth, spaceBoth, test);
+			assertArrayEquals(input1, result1);
+
+			result0 = test.peekLast();
+			assertSizeLengthEquals(2, lengthBoth, spaceBoth, test);
+			assertArrayEquals(input0, result0);
+
+			// remove
+			result1 = test.removeFirst();
+			assertSizeLengthEquals(1, length0, space0, test);
+			assertArrayEquals(input1, result1);
+		} catch (Exception e) {
+			throw e;
+		} finally {
+			test.close();
 		}
 	}
 

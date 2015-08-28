@@ -2,13 +2,13 @@ package cororok.circular_buffer;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import cororok.circular_buffer.storage.DefaultDiskWriterFactory;
-import cororok.circular_buffer.storage.IndexWriter;
 import cororok.circular_buffer.storage.DiskWriter;
 import cororok.circular_buffer.storage.DiskWriterFactory;
+import cororok.circular_buffer.storage.IndexWriter;
 
 /**
  * It supports stack(FIFO, addFirst & removeFirst) and queue(LIFO, addLast & removeFirst) but does not support deque
@@ -27,7 +27,7 @@ import cororok.circular_buffer.storage.DiskWriterFactory;
  * 
  * @author songduk.park cororok@gmail.com
  */
-public class CircularDiskQueueAndStack implements Queue, Stack {
+public class CircularDiskQueueAndStack implements Queue, Stack, Iterable<byte[]> {
 	protected static final long HEADER_SIZE = 4; // 1 bytes
 	CircularBufferInfo info;
 
@@ -87,145 +87,120 @@ public class CircularDiskQueueAndStack implements Queue, Stack {
 		return fileExists;
 	}
 
+	/**
+	 * solves mismatch between this and info
+	 */
 	void initSizeAndLength() {
 		this.size = this.info.size() / 2; // info counts header and data
 		this.length = this.info.length() - this.size * HEADER_SIZE;
 	}
 
 	@Override
-	public boolean addFirst(final byte[] bs) throws IOException {
-		return write(bs, true);
-	}
-
-	@Override
-	public boolean addLast(final byte[] bs) throws IOException {
-		return write(bs, false);
-	}
-
-	@Override
-	public byte[] peekFirst() throws IOException {
-		return read(true, true);
-	}
-
-	@Override
-	public byte[] removeFirst() throws IOException {
-		byte[] result = read(true, false);
-		if (result == null)
-			throw new NoSuchElementException();
-
-		return result;
-	}
-
-	boolean write(final byte[] bs, boolean toFirst) throws IOException {
-		if (info.canAdd(bs.length) == false)
-			throw new IOException("no more sapce");
-
-		info.backupStatus();
+	public void addFirst(final byte[] bs) throws IOException {
+		canWrite(bs);
 		try {
-			writeStorage(bs, toFirst);
+			writeFirst(bs);
+			writeIndexStart();
 			increaseLengthSize(bs.length);
 		} catch (Throwable e) {
 			info.rollback();
 			throw e;
 		}
-		return true;
 	}
 
-	void writeStorage(final byte[] bs, boolean toFirst) throws IOException {
-		if (toFirst) {// careful, add 2nd head, 1st data
-			writeToStorage(info.addFirst(bs.length), bs);
-			writeLengthToHeader(info.addFirst(HEADER_SIZE), bs.length);
-			index.writeStartAndSize(info.getStart(), info.size());
-		} else {
-			writeLengthToHeader(info.addLast(HEADER_SIZE), bs.length);
-			writeToStorage(info.addLast(bs.length), bs);
-			index.writeEndAndSize(info.getEnd(), info.size());
+	@Override
+	public void addLast(final byte[] bs) throws IOException {
+		canWrite(bs);
+		try {
+			writeLast(bs);
+			writeIndexEnd();
+			increaseLengthSize(bs.length);
+		} catch (Throwable e) {
+			info.rollback();
+			throw e;
 		}
 	}
 
-	byte[] read(boolean fromFirst, boolean readOnly) throws IOException {
+	private void canWrite(final byte[] bs) throws IOException {
+		if (bs == null || bs.length == 0)
+			throw new RuntimeException("empty input data");
+
+		if (info.canAdd(bs.length) == false)
+			throw new IOException("no more sapce");
+
+		info.backupStatus();
+	}
+
+	protected void writeFirst(final byte[] bs) throws IOException {
+		// data first, header later
+		writer.writeStorage(info.addFirst(bs.length), bs);
+		writeHeader(info.addFirst(HEADER_SIZE), bs.length);
+	}
+
+	protected void writeLast(final byte[] bs) throws IOException {
+		// header first, data later
+		writeHeader(info.addLast(HEADER_SIZE), bs.length);
+		writer.writeStorage(info.addLast(bs.length), bs);
+	}
+
+	@Override
+	public byte[] peekFirst() throws IOException {
 		if (info.size() == 0)
 			return null;
 
 		info.backupStatus();
-		byte[] result = null;
-		boolean needRollback = false;
 		try {
-			result = readStorage(fromFirst, readOnly);
+			return readFirst();
 		} catch (Throwable e) {
-			e.printStackTrace();
-			needRollback = true;
-			throw new IOException(e);
+			throw e;
 		} finally {
-			if (readOnly || needRollback)
-				info.rollback();
-			else
-				decreaseLengthSize(result.length);
-		}
-		return result;
-	}
-
-	byte[] readStorage(boolean fromFirst, boolean readOnly) throws IOException {
-		byte[] result;
-		if (fromFirst) {
-			long length = readLengthFromHeader(info.removeFirst(HEADER_SIZE));
-			long[] range = info.removeFirst(length);
-			result = readBytesFromStorage(range);
-			if (readOnly == false)
-				index.writeStartAndSize(info.getStart(), info.size());
-		} else {
-			throw new IOException("unsupported Read at the last");
-		}
-		return result;
-	}
-
-	byte[] readBytesFromStorage(long[] range) throws IOException {
-		if (range == null)
-			throw new IOException("null range");
-
-		byte[] result;
-		writer.seek(range[0]);
-
-		int size1 = (int) (range[1] - range[0]);
-		if (range.length == 2) {
-			result = new byte[size1];
-			writer.read(result);
-		} else {// two pieces
-			int size2 = (int) (range[3] - range[2]);
-			result = new byte[size1 + size2];
-			writer.read(result, 0, size1); // part 1
-
-			writer.seek(range[2]); // part 2
-			writer.read(result, size1, size2);
-		}
-		return result;
-	}
-
-	void writeToStorage(final long[] range, byte[] bs) throws IOException {
-		if (range == null)
-			throw new IOException("null range");
-
-		writer.seek(range[0]);
-		int size1 = (int) (range[1] - range[0]);
-		if (range.length == 2) {
-			writer.write(bs);
-		} else {// two pieces
-			int size2 = (int) (range[3] - range[2]);
-			writer.write(bs, 0, size1); // part 1
-
-			writer.seek(range[2]); // part 2
-			writer.write(bs, size1, size2);
+			info.rollback(); // because read only
 		}
 	}
 
-	int readLengthFromHeader(long[] range) throws IOException {
-		byte[] result = readBytesFromStorage(range);
-		return byteToNum(result);
+	@Override
+	public byte[] removeFirst() throws IOException {
+		if (info.size() == 0)
+			throw new NoSuchElementException();
+
+		info.backupStatus();
+		try {
+			byte[] result = readFirstToRemove();
+			writeIndexStart();
+			decreaseLengthSize(result.length);
+			return result;
+		} catch (Throwable e) {
+			info.rollback();
+			throw e;
+		}
 	}
 
-	void writeLengthToHeader(long[] range, int length) throws IOException {
-		byte[] data = numToByte(length);
-		writeToStorage(range, data);
+	byte[] readFirst() throws IOException {
+		long length = readHeader(info.removeFirst(HEADER_SIZE));
+		long[] range = info.removeFirst(length);
+		return writer.readStorage(range);
+	}
+
+	byte[] readFirstToRemove() throws IOException {
+		return readFirst();
+	}
+
+	void writeIndexStart() throws IOException {
+		index.writeStartAndSize(info.getStart(), info.size());
+	}
+
+	void writeIndexEnd() throws IOException {
+		index.writeEndAndSize(info.getEnd(), info.size());
+	}
+
+	int readHeader(long[] range) throws IOException {
+		byte[] result = writer.readStorage(range);
+		return ByteUtil.byteToNum(result);
+	}
+
+	void writeHeader(long[] range, int length) throws IOException {
+		byte[] data = ByteUtil.numToByte(length);
+		writer.writeStorage(range, data);
 	}
 
 	void increaseLengthSize(long space) {
@@ -275,14 +250,6 @@ public class CircularDiskQueueAndStack implements Queue, Stack {
 		return info.getEnd();
 	}
 
-	public static byte[] numToByte(int num) {
-		return ByteBuffer.allocate(4).putInt(num).array();
-	}
-
-	public static int byteToNum(byte[] bs) {
-		return ByteBuffer.wrap(bs).getInt();
-	}
-
 	@Override
 	public long getAvailableTotalSpace() {
 		return info.getAvailableSpace();
@@ -295,6 +262,12 @@ public class CircularDiskQueueAndStack implements Queue, Stack {
 
 	public long getHeaderSize() {
 		return HEADER_SIZE;
+	}
+
+	@Override
+	public Iterator<byte[]> iterator() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

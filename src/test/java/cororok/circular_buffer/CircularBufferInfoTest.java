@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import cororok.circular_buffer.CircularBufferInfo;
-
 public class CircularBufferInfoTest {
 
 	static final int CAPACITY = 10;

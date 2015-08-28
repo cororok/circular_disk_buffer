@@ -1,13 +1,8 @@
 package cororok.circular_buffer;
 
-import static cororok.circular_buffer.CircularDiskQueueAndStackTest.assertSizeLengthEquals;
-import static org.junit.Assert.assertArrayEquals;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import cororok.circular_buffer.CircularDiskDequeFixed;
 
 public class CircularDiskDequeFixedTest {
 
@@ -15,42 +10,18 @@ public class CircularDiskDequeFixedTest {
 
 	@Test
 	public void testReadWriteOnce() throws Exception {
-		final byte[] input0 = "123".getBytes();
-		final byte[] input1 = "abc".getBytes();
+		final byte[] input0 = "12345".getBytes();
+		final byte[] input1 = "abcde".getBytes();
+		CircularDiskDequeTest.testReadWriteOnce(new CircularDiskDequeFixed(100, fileName, input0.length), input0,
+				input1);
+	}
 
-		final long length0 = input0.length;
-		final long length1 = input1.length;
-		final long lengthBoth = length0 + length1;
+	@Test
+	public void testPeekWrite() throws Exception {
+		final byte[] input0 = "12345".getBytes();
+		final byte[] input1 = "abcde".getBytes();
 
-		final long space0 = length0;
-		final long space1 = length1;
-		final long spaceBoth = space0 + space1;
-		try (CircularDiskDequeFixed test = new CircularDiskDequeFixed(100, fileName, 3)) {
-			assertSizeLengthEquals(0, 0, 0, test);
-
-			test.addFirst(input0); // input0
-			assertSizeLengthEquals(1, length0, space0, test);
-
-			test.addFirst(input1); // input1 input
-			assertSizeLengthEquals(2, lengthBoth, spaceBoth, test);
-
-			byte[] result = test.removeLast(); // removed input0
-			assertSizeLengthEquals(1, length1, space1, test); // now input1 left
-			assertArrayEquals(input0, result);
-
-			test.addLast(input0); // now input1 input0
-			assertSizeLengthEquals(2, lengthBoth, spaceBoth, test);
-
-			byte[] result1 = test.removeFirst(); // removed input1
-			assertSizeLengthEquals(1, length0, space0, test); // now input0 left
-			assertArrayEquals(input1, result1);
-
-			byte[] result2 = test.removeLast(); // removed input0
-			assertSizeLengthEquals(0, 0, 0, test);
-			assertArrayEquals(input0, result2);
-		} catch (Exception e) {
-			throw e;
-		}
+		CircularDiskDequeTest.testPeekWrite(new CircularDiskDequeFixed(100, fileName, input0.length), input0, input1);
 	}
 
 	@Before
