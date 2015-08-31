@@ -2,7 +2,7 @@ package cororok.circular_buffer;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Iterator;
+import java.util.ConcurrentModificationException;
 import java.util.NoSuchElementException;
 
 import cororok.circular_buffer.storage.DefaultDiskWriterFactory;
@@ -27,13 +27,14 @@ import cororok.circular_buffer.storage.IndexWriter;
  * 
  * @author songduk.park cororok@gmail.com
  */
-public class CircularDiskQueueAndStack implements Queue, Stack, Iterable<byte[]> {
+public class CircularDiskQueueAndStack implements Queue, Stack {
 	protected static final long HEADER_SIZE = 4; // 1 bytes
 	CircularBufferInfo info;
 
 	DiskWriter writer;
 	IndexWriter index;
 	private File lock;
+	int changed;
 
 	/**
 	 * current total length of all input data without additional headers.
@@ -45,12 +46,15 @@ public class CircularDiskQueueAndStack implements Queue, Stack, Iterable<byte[]>
 	 */
 	protected long size;
 
+	private DiskWriterFactory facotry;
+
 	public CircularDiskQueueAndStack(long capacity, String fileName) throws IOException {
 		this(capacity, fileName, new DefaultDiskWriterFactory());
 	}
 
 	public CircularDiskQueueAndStack(long capacity, String fileName, DiskWriterFactory facotry) throws IOException {
-		if (openFile(fileName, facotry)) { // existing, needs to read size and length
+		this.facotry = facotry;
+		if (openFile(fileName)) { // existing, needs to read size and length
 			long[] startSizeEnd = this.index.readAll();
 			this.info = new CircularBufferInfo(capacity, startSizeEnd[0], startSizeEnd[2], startSizeEnd[1]);
 		} else {
@@ -59,18 +63,20 @@ public class CircularDiskQueueAndStack implements Queue, Stack, Iterable<byte[]>
 		initSizeAndLength();
 	}
 
+	protected CircularDiskQueueAndStack() {
+	}
+
 	/**
 	 * open or create the data file. It should lock file so that other processes can not access the data file at the
 	 * same time.
 	 * 
 	 * @param fileName
 	 *            data file name
-	 * @param facotry
 	 * @return true if it data file already exists
 	 * @throws IOException
 	 *             if someone is using the file
 	 */
-	private synchronized boolean openFile(String fileName, DiskWriterFactory facotry) throws IOException {
+	private synchronized boolean openFile(String fileName) throws IOException {
 		lock = new File(fileName + ".lock");
 		if (lock.exists())
 			throw new IOException("exit because lock file exist at " + lock.getAbsolutePath());
@@ -206,11 +212,13 @@ public class CircularDiskQueueAndStack implements Queue, Stack, Iterable<byte[]>
 	void increaseLengthSize(long space) {
 		length += space;
 		++size;
+		++changed;
 	}
 
 	void decreaseLengthSize(long space) {
 		length -= space;
 		--size;
+		++changed;
 	}
 
 	public String status() {
@@ -264,10 +272,85 @@ public class CircularDiskQueueAndStack implements Queue, Stack, Iterable<byte[]>
 		return HEADER_SIZE;
 	}
 
-	@Override
-	public Iterator<byte[]> iterator() {
-		// TODO Auto-generated method stub
-		return null;
+	/**
+	 * {@link #createMirror()} calls this to get an empty instance.
+	 * 
+	 * @return an empty instance which has the proper readXXX methods
+	 */
+	protected CircularDiskQueueAndStack createDummy() {
+		return new CircularDiskQueueAndStack();
 	}
 
+	/**
+	 * After it gets an empty instance by {{@link #createDummy()} it adds cloned {@link CircularBufferInfo} and a new
+	 * {@link DiskWriter}. It is called by {@link CircularDiskIterator}
+	 * 
+	 * @return
+	 */
+	protected final CircularDiskQueueAndStack createMirror() {
+		CircularDiskQueueAndStack bufferMirror = createDummy();
+		if (this.getClass() != bufferMirror.getClass())
+			throw new RuntimeException("createDummy method is not implemented in " + this.getClass());
+
+		bufferMirror.info = (CircularBufferInfo) this.info.clone();
+		try {
+			bufferMirror.writer = this.facotry.createStorageWriter(this.writer.geteFile());
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return bufferMirror;
+	}
+
+	/**
+	 * It is not an iterator, see {@link AutoCloseableIter}. it reads data from first to last.
+	 * 
+	 * @return something like iterator.
+	 */
+	public AutoCloseableIter iter() {
+		return new CircularDiskIterator(createMirror());
+	}
+
+	public class CircularDiskIterator implements AutoCloseableIter {
+		protected CircularDiskQueueAndStack bufferMirror;
+		protected CircularBufferInfo infoMirror;
+		private final int changedOri;
+
+		CircularDiskIterator(CircularDiskQueueAndStack bufferMirror) {
+			this.bufferMirror = bufferMirror;
+			this.infoMirror = bufferMirror.info;
+			this.changedOri = changed;
+		}
+
+		@Override
+		public boolean hasNext() {
+			return infoMirror.size() > 0;
+		}
+
+		@Override
+		public void close() throws Exception {
+			bufferMirror.writer.close();
+		}
+
+		@Override
+		public byte[] next() {
+			if (changed != changedOri) {
+				throw new ConcurrentModificationException("changed from " + changedOri + " to " + changed);
+			}
+			try {
+				return readNext();
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+		/**
+		 * reads data from first but {@link Queue} can have the other way.
+		 * 
+		 * @return
+		 * @throws IOException
+		 */
+		protected byte[] readNext() throws IOException {
+			return bufferMirror.readFirstToRemove();
+		}
+	}
 }

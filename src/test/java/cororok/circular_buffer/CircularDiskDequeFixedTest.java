@@ -24,6 +24,16 @@ public class CircularDiskDequeFixedTest {
 		CircularDiskDequeTest.testPeekWrite(new CircularDiskDequeFixed(100, fileName, input0.length), input0, input1);
 	}
 
+	@Test
+	public void testIterator() throws Exception {
+		CircularDiskQueueAndStackTest.testIterator(new CircularDiskDequeFixed(100, fileName, "aa".length()));
+	}
+
+	@Test
+	public void testIteratorBackward() throws Exception {
+		CircularDiskDequeTest.testIteratorBackward(new CircularDiskDequeFixed(100, fileName, "aa".length()));
+	}
+
 	@Before
 	@After
 	public void clean() throws Exception {

@@ -19,6 +19,9 @@ public class CircularDiskDeque extends CircularDiskQueueAndStack implements Dequ
 		super(capacity, fileName);
 	}
 
+	protected CircularDiskDeque() {
+	}
+
 	@Override
 	protected void writeFirst(final byte[] bs) throws IOException { // header, data, header
 		writeHeader(info.addFirst(HEADER_SIZE), bs.length); // one more header
@@ -90,4 +93,34 @@ public class CircularDiskDeque extends CircularDiskQueueAndStack implements Dequ
 	public long getHeaderSize() {
 		return headerSize;
 	}
+
+	@Override
+	protected CircularDiskQueueAndStack createDummy() {
+		return new CircularDiskDeque();
+	}
+
+	/**
+	 * it reads data from last to first.
+	 * 
+	 * @return an instance of {@link AutoCloseableIter}
+	 */
+	public AutoCloseableIter iterBackward() {
+		return new CircularDiskIteratorBackward(createMirror());
+	}
+
+	class CircularDiskIteratorBackward extends CircularDiskIterator {
+
+		CircularDiskDeque dequeMirror;
+
+		CircularDiskIteratorBackward(CircularDiskQueueAndStack buffer) {
+			super(buffer);
+			this.dequeMirror = (CircularDiskDeque) buffer;
+		}
+
+		@Override
+		protected byte[] readNext() throws IOException {
+			return dequeMirror.readLastToRemove();
+		}
+	}
+
 }

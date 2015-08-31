@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ConcurrentModificationException;
 
 import org.junit.After;
 import org.junit.Before;
@@ -162,6 +163,62 @@ public class CircularDiskQueueAndStackTest {
 			assertArrayEquals(input1, result1);
 		} catch (Exception e) {
 			throw e;
+		}
+	}
+
+	@Test
+	public void testIterator() throws Exception {
+		testIterator(openCircularDiskQueueAndStack());
+	}
+
+	public static void testIterator(CircularDiskQueueAndStack test) throws Exception {
+		try {
+			test.addFirst("aa".getBytes());
+			test.addFirst("bb".getBytes());
+			test.addFirst("cc".getBytes());
+
+			assertSizeLengthEquals(3, 6, 6 + test.getHeaderSize() * 3, test);
+
+			AutoCloseableIter itr = null;
+			itr = test.iter();
+			assertEquals(true, itr.hasNext());
+			assertEquals(true, itr.hasNext());
+
+			assertEquals(true, itr.hasNext());
+			assertArrayEquals("cc".getBytes(), itr.next());
+
+			assertEquals(true, itr.hasNext());
+			assertArrayEquals("bb".getBytes(), itr.next());
+
+			assertEquals(true, itr.hasNext());
+			assertArrayEquals("aa".getBytes(), itr.next());
+
+			assertEquals(false, itr.hasNext());
+
+			boolean shouldFail = false;
+			try {
+				itr.next();
+			} catch (Exception e) {
+				shouldFail = true;
+			}
+			itr.close();
+			assertEquals(true, shouldFail);
+			assertSizeLengthEquals(3, 6, 6 + test.getHeaderSize() * 3, test);
+
+			itr = test.iter();
+			shouldFail = false;
+			test.addLast("xx".getBytes());
+			try {
+				itr.next();
+			} catch (ConcurrentModificationException e) {
+				shouldFail = true;
+			}
+			itr.close();
+			assertEquals(true, shouldFail);
+		} catch (Exception e) {
+			throw e;
+		} finally {
+			test.close();
 		}
 	}
 

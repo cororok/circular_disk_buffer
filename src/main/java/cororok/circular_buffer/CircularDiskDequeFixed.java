@@ -17,6 +17,10 @@ public class CircularDiskDequeFixed extends CircularDiskDeque {
 		this.fixedSize = fixedSize;
 	}
 
+	public CircularDiskDequeFixed(long fixedSize) {
+		this.fixedSize = fixedSize;
+	}
+
 	@Override
 	void initSizeAndLength() {
 		this.size = this.info.size(); // info counts data only
@@ -70,5 +74,10 @@ public class CircularDiskDequeFixed extends CircularDiskDeque {
 	@Override
 	public long getHeaderSize() {
 		return 0;
+	}
+
+	@Override
+	protected CircularDiskQueueAndStack createDummy() {
+		return new CircularDiskDequeFixed(fixedSize);
 	}
 }

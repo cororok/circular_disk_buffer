@@ -6,7 +6,7 @@ package cororok.circular_buffer;
  * 
  * @author songduk.park cororok@gmail.com
  */
-public class CircularBufferInfo {
+public class CircularBufferInfo implements Cloneable {
 
 	/**
 	 * maximum space it can hold data
@@ -358,6 +358,52 @@ public class CircularBufferInfo {
 
 	public long getAvailableSpace() {
 		return capacity - length;
+	}
+
+	@Override
+	public Object clone() {
+		CircularBufferInfo copy = new CircularBufferInfo(capacity);
+		copy.start = start;
+		copy.end = end;
+		copy.size = size;
+		copy.length = length;
+
+		return copy;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (int) (capacity ^ (capacity >>> 32));
+		result = prime * result + (int) (end ^ (end >>> 32));
+		result = prime * result + (int) (length ^ (length >>> 32));
+		result = prime * result + (int) (size ^ (size >>> 32));
+		result = prime * result + (int) (start ^ (start >>> 32));
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+
+		CircularBufferInfo other = (CircularBufferInfo) obj;
+		if (capacity != other.capacity)
+			return false;
+		if (end != other.end)
+			return false;
+		if (length != other.length)
+			return false;
+		if (size != other.size)
+			return false;
+		if (start != other.start)
+			return false;
+		return true;
 	}
 
 }

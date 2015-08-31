@@ -5,11 +5,18 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+/**
+ * It is a wrapper of RandomAccessFile.
+ * 
+ * @author songduk.park cororok@gmail.com
+ */
 public class DefaultDiskWriter extends DiskWriter {
 
 	RandomAccessFile file;
+	File dataFile;
 
 	public DefaultDiskWriter(File dataFile) throws FileNotFoundException {
+		this.dataFile = dataFile;
 		this.file = new RandomAccessFile(dataFile, "rw");
 	}
 
@@ -41,5 +48,10 @@ public class DefaultDiskWriter extends DiskWriter {
 	@Override
 	public void close() throws IOException {
 		file.close();
+	}
+
+	@Override
+	public File geteFile() {
+		return dataFile;
 	}
 }

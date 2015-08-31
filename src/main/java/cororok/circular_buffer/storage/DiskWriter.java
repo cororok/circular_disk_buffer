@@ -1,7 +1,13 @@
 package cororok.circular_buffer.storage;
 
+import java.io.File;
 import java.io.IOException;
 
+/**
+ * It is used to read/write data in the persistent storage.
+ * 
+ * @author songduk.park cororok@gmail.com
+ */
 public abstract class DiskWriter implements AutoCloseable {
 
 	abstract public void seek(long pos) throws IOException;
@@ -15,7 +21,13 @@ public abstract class DiskWriter implements AutoCloseable {
 	abstract public int read(byte[] b) throws IOException;
 
 	/**
-	 * @param range {from, to} or {from1, to1, from2, to2}
+	 * @return current File
+	 */
+	abstract public File geteFile();
+
+	/**
+	 * @param range
+	 *            {from, to} or {from1, to1, from2, to2}
 	 * @return
 	 * @throws IOException
 	 */
@@ -39,7 +51,8 @@ public abstract class DiskWriter implements AutoCloseable {
 	}
 
 	/**
-	 * @param range {from, to} or {from1, to1, from2, to2}
+	 * @param range
+	 *            {from, to} or {from1, to1, from2, to2}
 	 * @param bs
 	 * @throws IOException
 	 */

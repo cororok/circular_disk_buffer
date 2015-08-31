@@ -2,6 +2,9 @@ package cororok.circular_buffer;
 
 import static cororok.circular_buffer.CircularDiskQueueAndStackTest.assertSizeLengthEquals;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
+import java.util.ConcurrentModificationException;
 
 import org.junit.After;
 import org.junit.Before;
@@ -17,6 +20,67 @@ public class CircularDiskDequeTest {
 		final byte[] input1 = "abc".getBytes();
 
 		testReadWriteOnce(new CircularDiskDeque(100, fileName), input0, input1);
+	}
+
+	@Test
+	public void testIterator() throws Exception {
+		CircularDiskQueueAndStackTest.testIterator(new CircularDiskDeque(100, fileName));
+	}
+
+	@Test
+	public void testIteratorBackward() throws Exception {
+		testIteratorBackward(new CircularDiskDeque(100, fileName));
+	}
+
+	public static void testIteratorBackward(CircularDiskDeque test) throws Exception {
+		try {
+			test.addFirst("aa".getBytes());
+			test.addFirst("bb".getBytes());
+			test.addFirst("cc".getBytes());
+
+			assertSizeLengthEquals(3, 6, 6 + test.getHeaderSize() * 3, test);
+
+			AutoCloseableIter itr = null;
+			itr = test.iterBackward();
+			assertEquals(true, itr.hasNext());
+			assertEquals(true, itr.hasNext());
+
+			assertEquals(true, itr.hasNext());
+			assertArrayEquals("aa".getBytes(), itr.next());
+
+			assertEquals(true, itr.hasNext());
+			assertArrayEquals("bb".getBytes(), itr.next());
+
+			assertEquals(true, itr.hasNext());
+			assertArrayEquals("cc".getBytes(), itr.next());
+
+			assertEquals(false, itr.hasNext());
+
+			boolean shouldFail = false;
+			try {
+				itr.next();
+			} catch (Exception e) {
+				shouldFail = true;
+			}
+			itr.close();
+			assertEquals(true, shouldFail);
+			assertSizeLengthEquals(3, 6, 6 + test.getHeaderSize() * 3, test);
+
+			itr = test.iterBackward();
+			shouldFail = false;
+			test.addLast("xx".getBytes());
+			try {
+				itr.next();
+			} catch (ConcurrentModificationException e) {
+				shouldFail = true;
+			}
+			itr.close();
+			assertEquals(true, shouldFail);
+		} catch (Exception e) {
+			throw e;
+		} finally {
+			test.close();
+		}
 	}
 
 	public static void testReadWriteOnce(CircularDiskDeque test, final byte[] input0, final byte[] input1)

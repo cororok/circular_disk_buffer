@@ -4,11 +4,18 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import cororok.circular_buffer.CircularBufferInfo;
+
+/**
+ * It only saves information in {@link CircularBufferInfo } to resume the status later.
+ * 
+ * @author songduk.park cororok@gmail.com
+ */
 public class IndexWriter implements AutoCloseable {
 
 	DiskWriter writer;
 
-	byte[] bs = new byte[8 * 3]; // start point + size + end point
+	byte[] bs = new byte[8 * 3]; // to save long type start point + size + end point
 	private ByteBuffer bb = ByteBuffer.allocate(8);
 
 	public IndexWriter(DiskWriter writer) throws FileNotFoundException {
@@ -16,7 +23,7 @@ public class IndexWriter implements AutoCloseable {
 	}
 
 	/**
-	 * @return 3 size of array which is {start_point, size, end_point}
+	 * @return 3 size of array which is {start_point, size, end_point} see {@link CircularBufferInfo }
 	 * @throws IOException
 	 */
 	public long[] readAll() throws IOException {

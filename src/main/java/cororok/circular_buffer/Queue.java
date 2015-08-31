@@ -2,6 +2,9 @@ package cororok.circular_buffer;
 
 import java.io.IOException;
 
+/**
+ * @author songduk.park cororok@gmail.com
+ */
 public interface Queue extends AbstractQueueAndStack {
 
 	/**
