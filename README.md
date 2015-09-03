@@ -8,7 +8,7 @@
 It will be useful when the memory based stack/queue does not fit to **hold large data** and needs some **persistent storage** to save them. Even though Database or MessageQueue can handle it but this project tries to provide a **lightweight** solution.
 
 ## features
-It supports **unfixed and fixed** length of any binary data and there is no limit on the file size until java supports.
+It supports **unfixed and fixed** length of any binary data and there is no limit on the file size until java supports. And it includes a BufferedStack(memory stack + disck stack).
 
 ## How to use
 build jar file through maven it will create ./target/circularDiskBuffer-1.0.0-SNAPSHOT.jar.
