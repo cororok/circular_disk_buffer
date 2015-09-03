@@ -30,7 +30,7 @@ public class Demo {
 			q.addLast(input1);
 			out.println(q.size() == 2);
 
-			byte[] out0 = q.removeFirst(); // queue has additional removeLast()
+			byte[] out0 = q.removeFirst(); // deque has additional removeLast()
 			byte[] out1 = q.removeFirst();
 			out.println(q.size() == 0);
 
