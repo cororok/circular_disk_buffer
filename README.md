@@ -11,7 +11,10 @@ It will be useful when the memory based stack/queue does not fit to **hold large
 It supports **unfixed and fixed** length of any binary data and there is no limit on the file size until java supports.
 
 ## How to use
+build jar file through maven it will create ./target/circularDiskBuffer-1.0.0-SNAPSHOT.jar.
+
 see code below.
+
 ```java
 import static java.lang.System.out;
 
@@ -55,12 +58,16 @@ public class Demo {
 		// efficient when the length of the input data is fixed because 
 		// no need to keep size header
 		long fixedSizeByte = 500;
-		Deque fixedDeque = new CircularDiskDequeFixed(diskSpaceByte, dataFileName, fixedSizeByte);
+		Deque fixedDeque = 
+			new CircularDiskDequeFixed(diskSpaceByte, dataFileName, fixedSizeByte);
 
 		// buffered stack
 		long maxMemoryByte = 50_000;
 		Stack bufferedStack = 
-			new BufferedCircularDiskStack(new CircularDiskQueueAndStack(diskSpaceByte, dataFileName), maxMemoryByte);
+			new BufferedCircularDiskStack(
+				new CircularDiskQueueAndStack(diskSpaceByte, dataFileName), 
+				maxMemoryByte
+			);
 
 		// needs to close above
 	}
