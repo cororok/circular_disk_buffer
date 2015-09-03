@@ -2,6 +2,8 @@ package cororok.circular_buffer;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -181,19 +183,19 @@ public class CircularDiskQueueAndStackTest {
 
 			AutoCloseableIter itr = null;
 			itr = test.iter();
-			assertEquals(true, itr.hasNext());
-			assertEquals(true, itr.hasNext());
+			assertTrue(itr.hasNext());
+			assertTrue(itr.hasNext());
 
-			assertEquals(true, itr.hasNext());
+			assertTrue(itr.hasNext());
 			assertArrayEquals("cc".getBytes(), itr.next());
 
-			assertEquals(true, itr.hasNext());
+			assertTrue(itr.hasNext());
 			assertArrayEquals("bb".getBytes(), itr.next());
 
-			assertEquals(true, itr.hasNext());
+			assertTrue(itr.hasNext());
 			assertArrayEquals("aa".getBytes(), itr.next());
 
-			assertEquals(false, itr.hasNext());
+			assertFalse(itr.hasNext());
 
 			boolean shouldFail = false;
 			try {
@@ -202,7 +204,7 @@ public class CircularDiskQueueAndStackTest {
 				shouldFail = true;
 			}
 			itr.close();
-			assertEquals(true, shouldFail);
+			assertTrue(shouldFail);
 			assertSizeLengthEquals(3, 6, 6 + test.getHeaderSize() * 3, test);
 
 			itr = test.iter();
@@ -214,7 +216,7 @@ public class CircularDiskQueueAndStackTest {
 				shouldFail = true;
 			}
 			itr.close();
-			assertEquals(true, shouldFail);
+			assertTrue(shouldFail);
 		} catch (Exception e) {
 			throw e;
 		} finally {
@@ -241,8 +243,8 @@ public class CircularDiskQueueAndStackTest {
 
 	public static void assertSizeLengthEquals(long size, long length, long lengthOfStorage,
 			CircularDiskQueueAndStack sq) {
-		assertEquals(size, sq.size);
-		assertEquals(length, sq.length);
+		assertEquals(size, sq.size());
+		assertEquals(length, sq.length());
 		assertEquals(lengthOfStorage, sq.lengthOfStorage());
 	}
 }

@@ -13,7 +13,7 @@ import java.util.NoSuchElementException;
  */
 public class CircularDiskDeque extends CircularDiskQueueAndStack implements Deque {
 
-	private static long headerSize = CircularDiskQueueAndStack.HEADER_SIZE * 2;
+	private static int headerSize = CircularDiskQueueAndStack.HEADER_SIZE * 2;
 
 	public CircularDiskDeque(long capacity, String fileName) throws IOException {
 		super(capacity, fileName);
@@ -90,7 +90,7 @@ public class CircularDiskDeque extends CircularDiskQueueAndStack implements Dequ
 	}
 
 	@Override
-	public long getHeaderSize() {
+	public int getHeaderSize() {
 		return headerSize;
 	}
 

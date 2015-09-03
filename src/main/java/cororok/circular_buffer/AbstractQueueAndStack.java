@@ -34,9 +34,14 @@ public interface AbstractQueueAndStack extends AutoCloseable {
 	long size();
 
 	/**
-	 * @return total space it uses to keep the byte[] including header
+	 * @return total space it uses to keep the byte[] excluding header
 	 */
 	long length();
+
+	/**
+	 * @return total space it uses to keep the byte[] including header
+	 */
+	long lengthOfStorage();
 
 	/**
 	 * @return available free space without counting header size

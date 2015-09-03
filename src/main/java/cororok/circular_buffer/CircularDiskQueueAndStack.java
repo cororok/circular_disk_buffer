@@ -28,7 +28,7 @@ import cororok.circular_buffer.storage.IndexWriter;
  * @author songduk.park cororok@gmail.com
  */
 public class CircularDiskQueueAndStack implements Queue, Stack {
-	protected static final long HEADER_SIZE = 4; // 1 bytes
+	protected static final int HEADER_SIZE = 4; // 1 bytes
 	CircularBufferInfo info;
 
 	DiskWriter writer;
@@ -237,7 +237,7 @@ public class CircularDiskQueueAndStack implements Queue, Stack {
 		return this.size;
 	}
 
-	public boolean canAdd(long add) {
+	public boolean canAddWithHeader(long add) {
 		return info.canAdd(add);
 	}
 
@@ -268,7 +268,7 @@ public class CircularDiskQueueAndStack implements Queue, Stack {
 		return info.getAvailableSpace() - HEADER_SIZE;
 	}
 
-	public long getHeaderSize() {
+	public int getHeaderSize() {
 		return HEADER_SIZE;
 	}
 

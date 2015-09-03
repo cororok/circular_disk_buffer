@@ -57,6 +57,11 @@ public class Demo {
 		long fixedSizeByte = 500;
 		Deque fixedDeque = new CircularDiskDequeFixed(diskSpaceByte, dataFileName, fixedSizeByte);
 
+		// buffered stack
+		long maxMemoryByte = 50_000;
+		Stack bufferedStack = 
+			new BufferedCircularDiskStack(new CircularDiskQueueAndStack(diskSpaceByte, dataFileName), maxMemoryByte);
+
 		// needs to close above
 	}
 }

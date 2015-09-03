@@ -10,14 +10,14 @@ import java.io.IOException;
  */
 public class CircularDiskDequeFixed extends CircularDiskDeque {
 
-	final long fixedSize;
+	final int fixedSize;
 
-	public CircularDiskDequeFixed(long capacity, String fileName, long fixedSize) throws IOException {
+	public CircularDiskDequeFixed(long capacity, String fileName, int fixedSize) throws IOException {
 		super(capacity, fileName);
 		this.fixedSize = fixedSize;
 	}
 
-	public CircularDiskDequeFixed(long fixedSize) {
+	public CircularDiskDequeFixed(int fixedSize) {
 		this.fixedSize = fixedSize;
 	}
 
@@ -72,7 +72,7 @@ public class CircularDiskDequeFixed extends CircularDiskDeque {
 	}
 
 	@Override
-	public long getHeaderSize() {
+	public int getHeaderSize() {
 		return 0;
 	}
 
